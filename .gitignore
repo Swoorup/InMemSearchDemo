@@ -57,4 +57,3 @@ Preci*.pdf
 .fake/
 .ionide/
 .dotty*
-docker/postgres-data

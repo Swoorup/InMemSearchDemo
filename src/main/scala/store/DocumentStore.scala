@@ -10,23 +10,22 @@ type DocumentStoreError = String
 trait DocumentStore[F[_]]:
   def bulkInsert[T, K](using DocumentSchema[T, K])(objects: List[T]): F[Unit]
   def lookUp[T, K](using DocumentSchema[T, K])(key: K): F[Option[T]]
-  def searchByField[T, K](using
-      DocumentSchema[T, K]
-  )(field: String, value: String): F[Either[DocumentStoreError, List[T]]]
+  def searchByField[T, K](using DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]]
 
 object DocumentStore:
-  def apply[F[_]: Async]: F[DocumentStore[F]] =
+  def apply[F[_]: Async]: F[DocumentStore[F]] = {
     for {
       documentsRef <- Ref.of[F, Map[DocumentSchema[?, ?], Documents[?, ?]]](Map.empty)
       store        <- Sync[F].delay(new DocumentStoreImpl[F](documentsRef))
     } yield store
+  }
 
 private class DocumentStoreImpl[F[_]: Async](
     documentsSchemaMapRef: Ref[F, Map[DocumentSchema[?, ?], Documents[?, ?]]]
 ) extends DocumentStore[F] {
   import Implicits.*
 
-  def bulkInsert[T, K](using schema: DocumentSchema[T, K])(objects: List[T]): F[Unit] =
+  def bulkInsert[T, K](using schema: DocumentSchema[T, K])(objects: List[T]): F[Unit] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsToInsert  <- Sync[F].delay(Documents(objects))
@@ -38,8 +37,9 @@ private class DocumentStoreImpl[F[_]: Async](
       }
       _ <- documentsSchemaMapRef.modify(ds => (ds.+(schema -> updatedDocuments), ds))
     } yield ()
+  }
 
-  def lookUp[T, K](using schema: DocumentSchema[T, K])(key: K): F[Option[T]] =
+  def lookUp[T, K](using schema: DocumentSchema[T, K])(key: K): F[Option[T]] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
@@ -49,10 +49,9 @@ private class DocumentStoreImpl[F[_]: Async](
         document  <- documents.all.asInstanceOf[Map[K, T]].get(key)
       } yield document.asInstanceOf[T]
     }
+  }
 
-  def searchByField[T, K](using
-      schema: DocumentSchema[T, K]
-  )(field: String, value: String): F[Either[DocumentStoreError, List[T]]] =
+  def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
@@ -66,19 +65,14 @@ private class DocumentStoreImpl[F[_]: Async](
           else
             // search using non primary indexes
             for {
-              indexData <- Either.fromOption(
-                documents.indexData.get(field),
-                s"Schema ${schema.name} does not have field $field"
-              )
+              indexData     <- Either.fromOption(documents.indexData.get(field), s"Schema ${schema.name} does not have field $field")
               indexToSearch <- indexData.tryParseToIndexPrimitive(value)
-            } yield indexData.indexToPrimary
-              .get(indexToSearch)
-              .getOrElse(Set.empty)
-              .asInstanceOf[Set[K]]
+            } yield indexData.indexToPrimary.get(indexToSearch).getOrElse(Set.empty).asInstanceOf[Set[K]]
       } yield {
         primaryKeys.toList
           .map(key => documents.all.asInstanceOf[Map[K, T]].get(key))
           .flattenOption
       }
     }
+  }
 }

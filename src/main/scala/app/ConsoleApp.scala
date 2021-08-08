@@ -10,28 +10,55 @@ import inmemdb.domain.JsonCodec.given
 import inmemdb.domain.DocumentSchema.given
 import inmemdb.store.DocumentSchema
 
-extension (str: String) def padField: String = str.padTo(18, ' ')
+private object ConsoleAppUtil:
+  extension (str: String) {
+    def padField: String = str.padTo(18, ' ')
+    def highlight: String = {
+      import scala.Console.*
+      s"${RESET}${BOLD}${UNDERLINED}${str}${RESET}"
+    }
+  }
 
-extension (list: List[String]) def displayString: String = list.mkString("[", ",", "]")
+  extension (list: List[String]) def displayString: String = list.mkString("[", ",", "]")
 
-given userShow: Show[User] with
-  def show(t: User): String =
-    import scala.Console.*
-    s"${"_id".padField}${t.id}\n" ++
-      s"${"name".padField}${t.name}\n" ++
-      s"${"created_at".padField}${t.createdAt}\n" ++
-      s"${"verified".padField}${t.verified.getOrElse("")}"
+  extension [F[_]: Console](console: Console[F])
+    def printlnInfo(msg: String): F[Unit] = {
+      import scala.Console.*
+      Console[F].println(s"${RESET}${BLUE}${msg}${RESET}")
+    }
 
-given ticketShow: Show[Ticket] with
-  def show(t: Ticket): String =
-    import scala.Console.*
-    s"${"_id".padField}${t.id}\n" ++
-      s"${"type".padField}${t.ticketType.getOrElse("")}\n" ++
-      s"${"subject".padField}${t.subject}\n" ++
-      s"${"assignee_id".padField}${t.assigneeId.getOrElse("")}\n" ++
-      s"${"tags".padField}${t.tags.displayString}"
+    def printlnErr(msg: String): F[Unit] = {
+      import scala.Console.*
+      Console[F].println(s"${RESET}${RED}${msg}${RESET}")
+    }
+
+    def printlnSuccess(msg: String): F[Unit] = {
+      import scala.Console.*
+      Console[F].println(s"${RESET}${GREEN}${msg}${RESET}")
+    }
+
+  given userShow: Show[User] with
+    def show(t: User): String = {
+      import scala.Console.*
+      s"${"_id".padField}${t.id}\n" ++
+        s"${"name".padField}${t.name}\n" ++
+        s"${"created_at".padField}${t.createdAt}\n" ++
+        s"${"verified".padField}${t.verified.getOrElse("")}"
+    }
+
+  given ticketShow: Show[Ticket] with
+    def show(t: Ticket): String = {
+      import scala.Console.*
+      s"${"_id".padField}${t.id}\n" ++
+        s"${"type".padField}${t.ticketType.getOrElse("")}\n" ++
+        s"${"subject".padField}${t.subject}\n" ++
+        s"${"assignee_id".padField}${t.assigneeId.getOrElse("")}\n" ++
+        s"${"tags".padField}${t.tags.displayString}"
+    }
 
 class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
+  import ConsoleAppUtil.{*, given}
+
   val userSchema    = summon[DocumentSchema[User, UserId]]
   val ticketSchema  = summon[DocumentSchema[Ticket, TicketId]]
   val displayBanner = """
@@ -39,85 +66,54 @@ class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
       Type 'quit' to exit at any time, Press 'Enter' to continue
   """
 
-  def printlnInfo(msg: String): F[Unit] =
-    import scala.Console.*
-    Console[F].println(s"${RESET}${BLUE}${msg}${RESET}")
-
-  def printlnErr(msg: String): F[Unit] =
-    import scala.Console.*
-    Console[F].println(s"${RESET}${RED}${msg}${RESET}")
-
-  def printlnSuccess(msg: String): F[Unit] =
-    import scala.Console.*
-    Console[F].println(s"${RESET}${GREEN}${msg}${RESET}")
-
-  def highlight(str: String): String =
-    import scala.Console.*
-    s"${RESET}${BOLD}${UNDERLINED}${str}${RESET}"
-
-  def searchingText(entity: String, searchTerm: String, searchValue: String): String =
-    s"Searching $entity for ${highlight(searchTerm)} with a value of ${highlight(searchValue)}."
-
-  def getSearchTermAndValue(entity: String): F[(String, String)] =
+  def displayUser(user: User): F[Unit] = {
     for {
-      searchTerm  <- Console[F].print("Enter search term: ") *> Console[F].readLine
-      searchValue <- Console[F].print("Enter search value: ") *> Console[F].readLine
-      _           <- Console[F].println("")
-      _           <- Console[F].println(searchingText(entity, searchTerm, searchValue))
-      _           <- Console[F].println("")
-    } yield (searchTerm, searchValue)
-
-  def displayUser(user: User): F[Unit] =
-    for {
-      _              <- printlnSuccess(userShow.show(user))
+      _              <- Console[F].printlnSuccess(userShow.show(user))
       ticketsForUser <- store.searchByField[Ticket, TicketId]("assignee_id", user.id.toString)
       _ <- ticketsForUser match
-        case Left(error) => printlnErr(s"Error occurred while getting tickets: $error")
+        case Left(error) => Console[F].printlnErr(s"Error occurred while getting tickets: $error")
         case Right(tickets) =>
           val displayTickets = tickets.map(_.subject).displayString
-          printlnSuccess(s"${"tickets".padField}$displayTickets")
+          Console[F].printlnSuccess(s"${"tickets".padField}$displayTickets")
       _ <- Console[F].println("----------------------------------------------------------------")
     } yield ()
+  }
 
-  def displayTicket(ticket: Ticket): F[Unit] =
+  def displayTicket(ticket: Ticket): F[Unit] = {
     for {
-      _    <- printlnSuccess(ticketShow.show(ticket))
+      _    <- Console[F].printlnSuccess(ticketShow.show(ticket))
       user <- ticket.assigneeId.traverse(userId => store.lookUp[User, UserId](userId)).map(_.flatten)
-      _    <- user.map(_.name).traverse { name => printlnSuccess(s"${"assignee_name".padField}$name") }
+      _    <- user.map(_.name).traverse { name => Console[F].printlnSuccess(s"${"assignee_name".padField}$name") }
       _    <- Console[F].println("----------------------------------------------------------------")
     } yield ()
+  }
 
-  def searchUsers: F[Unit] = {
+  def searchHandlingErrors[T, K](using DocumentSchema[T, K])(entity: String)(handleResults: List[T] => F[Unit]): F[Unit] = {
     for {
-      searchParam <- getSearchTermAndValue("users")
-      (searchTerm, searchValue) = searchParam
-      result <- store.searchByField[User, UserId](searchTerm, searchValue)
-      _ <- result match
-        case Left(error)  => printlnErr(s"Error occurred: $error")
-        case Right(users) => users.traverse_(displayUser)
+      searchTerm   <- Console[F].print("Enter search term: ") *> Console[F].readLine
+      searchValue  <- Console[F].print("Enter search value: ") *> Console[F].readLine
+      _            <- Console[F].println("")
+      _            <- Console[F].println(s"Searching $entity for ${searchTerm.highlight} with a value of ${searchValue.highlight}.")
+      _            <- Console[F].println("")
+      searchResult <- store.searchByField[T, K](searchTerm, searchValue)
+      _ <- searchResult match
+        case Left(error) => Console[F].printlnErr(s"Error occurred: $error")
+        case Right(results) =>
+          if results.isEmpty then Console[F].println("No results found")
+          else handleResults(results)
 
     } yield ()
   }
 
-  def searchTickets: F[Unit] = {
+  def searchZendesk: F[Unit] = {
     for {
-      searchParam <- getSearchTermAndValue("tickets")
-      (searchTerm, searchValue) = searchParam
-      result <- store.searchByField[Ticket, TicketId](searchTerm, searchValue)
-      _ <- result match
-        case Left(error)    => printlnErr(s"Error occurred: $error")
-        case Right(tickets) => tickets.traverse_(displayTicket)
-    } yield ()
-  }
-
-  def searchZendesk: F[Unit] =
-    for {
-      input <- printlnInfo("Select 1) Users or 2) Tickets") *> Console[F].readLine
+      input <- Console[F].printlnInfo("Select 1) Users or 2) Tickets") *> Console[F].readLine
       _ <- input match
-        case "1" => searchUsers
-        case "2" => searchTickets
-        case _   => printlnErr("Invalid search selection. Please try again.") *> searchZendesk
+        case "1" => searchHandlingErrors[User, UserId]("users")(_.traverse_(displayUser))
+        case "2" => searchHandlingErrors[Ticket, TicketId]("tickets")(_.traverse_(displayTicket))
+        case _   => Console[F].printlnErr("Invalid search selection. Please try again.") *> searchZendesk
     } yield ()
+  }
 
   def viewSearchOptions: F[Unit] = {
     def displayFields(schema: DocumentSchema[?, ?]) =
@@ -127,14 +123,15 @@ class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
 
     val searchOptionsText = "Select 1) Users or 2) Tickets"
     for {
-      _ <- printlnInfo("----------------------------------------------------------------")
-      _ <- printlnInfo("Search Users with")
+      _ <- Console[F].printlnInfo("----------------------------------------------------------------")
+      _ <- Console[F].printlnInfo("Search Users with")
+      _ <- Console[F].printlnInfo("----------------------------------------------------------------")
       _ <- Console[F].println("")
       _ <- displayFields(userSchema)
-      _ <- printlnInfo("Search Tickets with")
-      _ <- printlnInfo("----------------------------------------------------------------")
+      _ <- Console[F].printlnInfo("----------------------------------------------------------------")
+      _ <- Console[F].printlnInfo("Search Tickets with")
+      _ <- Console[F].printlnInfo("----------------------------------------------------------------")
       _ <- displayFields(ticketSchema)
-      _ <- printlnInfo("----------------------------------------------------------------")
     } yield ()
   }
 
@@ -149,15 +146,14 @@ class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
       """
 
     for {
-      _     <- printlnInfo(promptOptionsText)
-      input <- Console[F].readLine
+      input <- Console[F].printlnInfo(promptOptionsText) *> Console[F].readLine
       _ <- input match
         case "1"    => searchZendesk *> prompt
         case "2"    => viewSearchOptions *> prompt
         case "quit" => Monad[F].unit
-        case _      => printlnErr("Invalid selection. Try again.") *> prompt
+        case _      => Console[F].printlnErr("Invalid selection. Try again.") *> prompt
     } yield ()
   }
 
-  def run: F[Unit] = printlnInfo(displayBanner) *> prompt
+  def run: F[Unit] = Console[F].printlnInfo(displayBanner) *> prompt
 }
