@@ -1,7 +1,7 @@
 import inmemdb.domain.*
 import inmemdb.domain.DocumentSchema.given
 import inmemdb.domain.JsonCodec.given
-import inmemdb.store.*
+import inmemdb.db.*
 
 import cats.effect.*
 import cats.*
@@ -42,7 +42,7 @@ val user = User(
 
 given IORuntime = IORuntime.global
 val app = for {
-  store   <- DocumentStore[IO]
+  store   <- Database[IO]
   _       <- store.bulkInsert[User, UserId](List(user))
   result  <- store.searchByField[User, UserId]("_id", "131231")
 } yield { result }

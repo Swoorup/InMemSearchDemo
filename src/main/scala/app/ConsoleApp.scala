@@ -56,7 +56,7 @@ private object ConsoleAppUtil:
         s"${"tags".padField}${t.tags.displayString}"
     }
 
-class ConsoleApp[F[_]: Console: Monad](store: Database[F]) {
+class ConsoleApp[F[_]: Console: Monad](db: Database[F]) {
   import ConsoleAppUtil.{*, given}
 
   val userSchema    = summon[DocumentSchema[User, UserId]]
@@ -69,7 +69,7 @@ class ConsoleApp[F[_]: Console: Monad](store: Database[F]) {
   def displayUser(user: User): F[Unit] = {
     for {
       _              <- Console[F].printlnSuccess(userShow.show(user))
-      ticketsForUser <- store.searchByField[Ticket, TicketId]("assignee_id", user.id.toString)
+      ticketsForUser <- db.searchByField[Ticket, TicketId]("assignee_id", user.id.toString)
       _ <- ticketsForUser match
         case Left(error) => Console[F].printlnErr(s"Error occurred while getting tickets: $error")
         case Right(tickets) =>
@@ -82,7 +82,7 @@ class ConsoleApp[F[_]: Console: Monad](store: Database[F]) {
   def displayTicket(ticket: Ticket): F[Unit] = {
     for {
       _    <- Console[F].printlnSuccess(ticketShow.show(ticket))
-      user <- ticket.assigneeId.traverse(userId => store.lookUp[User, UserId](userId)).map(_.flatten)
+      user <- ticket.assigneeId.traverse(userId => db.lookUp[User, UserId](userId)).map(_.flatten)
       _    <- user.map(_.name).traverse { name => Console[F].printlnSuccess(s"${"assignee_name".padField}$name") }
       _    <- Console[F].println("----------------------------------------------------------------")
     } yield ()
@@ -95,7 +95,7 @@ class ConsoleApp[F[_]: Console: Monad](store: Database[F]) {
       _            <- Console[F].println("")
       _            <- Console[F].println(s"Searching $entity for ${searchTerm.highlight} with a value of ${searchValue.highlight}.")
       _            <- Console[F].println("")
-      searchResult <- store.searchByField[T, K](searchTerm, searchValue)
+      searchResult <- db.searchByField[T, K](searchTerm, searchValue)
       _ <- searchResult match
         case Left(error) => Console[F].printlnErr(s"Error occurred: $error")
         case Right(results) =>

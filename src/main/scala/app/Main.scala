@@ -35,13 +35,13 @@ object InMemDbDemoApp
         tickets <- decodeJsonFile[List[Ticket]](config.ticketsJsonPath)
 
         // initialize the in memory document store
-        store <- Database[IO]
+        db <- Database[IO]
 
         // add initial data
-        _ <- store.bulkInsert[User, UserId](users)
-        _ <- store.bulkInsert[Ticket, TicketId](tickets)
+        _ <- db.bulkInsert[User, UserId](users)
+        _ <- db.bulkInsert[Ticket, TicketId](tickets)
 
-        _ <- new ConsoleApp(store).run
+        _ <- new ConsoleApp(db).run
       } yield ExitCode.Success
     }
   }
