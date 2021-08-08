@@ -36,8 +36,9 @@ object DocumentSchema:
     def name = "Ticket"
     def primary = Field("_id", _.id)
     def fields = List(
-      Field("name", _.createdAt),
-      Field("ticketType", _.ticketType),
-      Field("assigneeId", _.assigneeId),
+      Field("created_at", _.createdAt),
+      Field("type", _.ticketType),
+      Field("subject", _.subject),
+      Field("assignee_id", _.assigneeId),
       Field("tags", _.tags),
     )

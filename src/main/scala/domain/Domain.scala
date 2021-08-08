@@ -27,6 +27,7 @@ case class Ticket(
   id: TicketId,
   createdAt: OffsetDateTime,
   ticketType: Option[String],
+  subject: String,
   assigneeId: Option[UserId],
   tags: List[String]
 )
