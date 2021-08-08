@@ -75,9 +75,21 @@ private class DocumentStoreImpl[F[_]: Async](
     } yield {
       for {
         documents <- Either.fromOption(documentsOpt, s"No data present for schema ${schema.name}")
-        currentIndexMap <- Either.fromOption(documents.indexes.get(field), s"Schema ${schema.name} does not have field $field")
-        // indexToSearch <- curr
-        // searchResult <- currentIndexMap.get
-      } yield ???
+        primaryKeys <- 
+          if field == schema.primary.name then 
+            // search using primary key
+            schema.primary.stringDecoder.decode(value).map(Set(_))
+          else 
+            // search using non primary keys
+            for { 
+              indexData <- Either.fromOption(documents.indexData.get(field), s"Schema ${schema.name} does not have field $field")
+              indexToSearch <- indexData.tryParseToIndexPrimitive(value)
+            } yield indexData.map.get(indexToSearch).getOrElse(Set.empty).asInstanceOf[Set[K]]
+      } yield {
+        primaryKeys
+          .toList
+          .map(key => documents.all.asInstanceOf[Map[K, T]].get(key))
+          .flattenOption
+      }
     }
 }

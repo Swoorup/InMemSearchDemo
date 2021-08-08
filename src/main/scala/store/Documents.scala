@@ -25,10 +25,10 @@ case class IndexData[I, K](
 
 case class Documents[T, K](
   all: Map[K, T],
-  indexes: Map[String, IndexData[?, K]]
+  indexData: Map[String, IndexData[?, K]]
 ) { 
   def merge(other: Documents[T, K]): Documents[T, K] = {
-    val newIndexes = (this.indexes merge other.indexes) { 
+    val newIndexes = (this.indexData merge other.indexData) { 
       // safe operation as same field should have same value type
       (idx1, idx2) => idx1.merge(idx2.asInstanceOf[idx1.IndexDataType]) 
     }
@@ -52,7 +52,7 @@ object Documents:
       field.name -> IndexData(nonUniqueIndexMap, field.stringDecoder, field.indexEncoder)
     }.toMap
 
-    Documents(all = Map(schema.primary.select(document) -> document), indexes = currentIndexes)
+    Documents(all = Map(schema.primary.select(document) -> document), indexData = currentIndexes)
 
   def apply[T, K](using schema: DocumentSchema[T, K])(documents: List[T]): Documents[T, K] = 
     documents.map(fromSingle).fold(empty)(_.merge(_))
