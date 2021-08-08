@@ -1,7 +1,7 @@
 import cats.effect.{IO, SyncIO, Resource}
 import munit.CatsEffectSuite
 
-class DocumentStoreTestSuite extends CatsEffectSuite {
+class DatabaseTestSuite extends CatsEffectSuite {
   val myFixture = ResourceSuiteLocalFixture(
     "my-fixture",
     Resource.make(IO.unit)(_ => IO.unit)

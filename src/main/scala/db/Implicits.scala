@@ -1,4 +1,4 @@
-package inmemdb.store
+package inmemdb.db
 
 object Implicits:
   import java.time.OffsetDateTime

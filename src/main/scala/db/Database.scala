@@ -1,28 +1,28 @@
-package inmemdb.store
+package inmemdb.db
 
 import cats.Applicative
 import cats.implicits.*
 import cats.effect.{Async, Ref, Sync}
 import java.time.OffsetDateTime
 
-type DocumentStoreError = String
+type DatabaseError = String
 
-trait DocumentStore[F[_]]:
+trait Database[F[_]]:
   def bulkInsert[T, K](using DocumentSchema[T, K])(objects: List[T]): F[Unit]
   def lookUp[T, K](using DocumentSchema[T, K])(key: K): F[Option[T]]
-  def searchByField[T, K](using DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]]
+  def searchByField[T, K](using DocumentSchema[T, K])(field: String, value: String): F[Either[DatabaseError, List[T]]]
 
-object DocumentStore:
-  def apply[F[_]: Async]: F[DocumentStore[F]] = {
+object Database:
+  def apply[F[_]: Async]: F[Database[F]] = {
     for {
       documentsRef <- Ref.of[F, Map[DocumentSchema[?, ?], Documents[?, ?]]](Map.empty)
-      store        <- Sync[F].delay(new DocumentStoreImpl[F](documentsRef))
+      store        <- Sync[F].delay(new DatabaseImpl[F](documentsRef))
     } yield store
   }
 
-private class DocumentStoreImpl[F[_]: Async](
+private class DatabaseImpl[F[_]: Async](
     documentsSchemaMapRef: Ref[F, Map[DocumentSchema[?, ?], Documents[?, ?]]]
-) extends DocumentStore[F] {
+) extends Database[F] {
   import Implicits.*
 
   def bulkInsert[T, K](using schema: DocumentSchema[T, K])(objects: List[T]): F[Unit] = {
@@ -51,7 +51,7 @@ private class DocumentStoreImpl[F[_]: Async](
     }
   }
 
-  def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]] = {
+  def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, value: String): F[Either[DatabaseError, List[T]]] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))

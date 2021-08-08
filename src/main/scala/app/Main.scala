@@ -4,7 +4,7 @@ import cats.effect.{IO, IOApp, ExitCode}
 import cats.implicits.*
 import com.monovore.decline.*
 import com.monovore.decline.effect.*
-import inmemdb.store.DocumentStore
+import inmemdb.db.Database
 import java.io.File
 
 import inmemdb.domain.*
@@ -35,7 +35,7 @@ object InMemDbDemoApp
         tickets <- decodeJsonFile[List[Ticket]](config.ticketsJsonPath)
 
         // initialize the in memory document store
-        store <- DocumentStore[IO]
+        store <- Database[IO]
 
         // add initial data
         _ <- store.bulkInsert[User, UserId](users)

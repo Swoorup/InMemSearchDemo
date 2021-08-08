@@ -3,12 +3,12 @@ package inmemdb.app
 import cats.effect.std.Console
 import cats.*
 import cats.implicits.*
-import inmemdb.store.DocumentStore
+import inmemdb.db.Database
 
 import inmemdb.domain.*
 import inmemdb.domain.JsonCodec.given
 import inmemdb.domain.DocumentSchema.given
-import inmemdb.store.DocumentSchema
+import inmemdb.db.DocumentSchema
 
 private object ConsoleAppUtil:
   extension (str: String) {
@@ -56,7 +56,7 @@ private object ConsoleAppUtil:
         s"${"tags".padField}${t.tags.displayString}"
     }
 
-class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
+class ConsoleApp[F[_]: Console: Monad](store: Database[F]) {
   import ConsoleAppUtil.{*, given}
 
   val userSchema    = summon[DocumentSchema[User, UserId]]

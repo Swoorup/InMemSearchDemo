@@ -1,4 +1,4 @@
-package inmemdb.store
+package inmemdb.db
 
 trait Encoder[From, To]:
   def encode(value: From): To

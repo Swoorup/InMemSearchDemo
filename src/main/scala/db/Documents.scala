@@ -1,7 +1,7 @@
-package inmemdb.store
+package inmemdb.db
 
 import inmemdb.common.*
-import inmemdb.store.DocumentSchema
+import inmemdb.db.DocumentSchema
 
 case class Documents[T, K](
     all: Map[K, T],

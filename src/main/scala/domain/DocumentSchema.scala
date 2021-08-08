@@ -2,8 +2,8 @@ package inmemdb.domain
 
 object DocumentSchema:
   import java.util.UUID
-  import inmemdb.store.*
-  import inmemdb.store.Implicits.given
+  import inmemdb.db.*
+  import inmemdb.db.Implicits.given
 
   given InputDecoder[UserId] with
     def decode(payload: String): Either[String, UserId] = {
