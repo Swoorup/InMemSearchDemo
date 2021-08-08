@@ -1,9 +1,8 @@
-package inmemdb
+package inmemdb.domain
 
 import io.circe.Decoder
 import java.time.OffsetDateTime
 import java.util.UUID
-import store.DocumentSchema
 
 opaque type UserId = Long
 opaque type TicketId = UUID
@@ -13,6 +12,8 @@ given Decoder[TicketId] = Decoder[UUID]
 
 object UserId { def fromLong(l: Long): UserId = l }
 extension (x: UserId) def value: Long = x
+
+object TicketId { def fromUUID(l: UUID): TicketId = l }
 extension (x: TicketId) def value: UUID = x
 
 case class User(
@@ -22,31 +23,10 @@ case class User(
   verified: Boolean
 )
 
-enum Incident:
-  case Incident
-  case Problem
-  case Question
-  case Task
-
 case class Ticket(
   id: TicketId,
   createdAt: OffsetDateTime,
-  ticketType: Option[Incident],
+  ticketType: Option[String],
   assigneeId: Option[UserId],
   tags: List[String]
 )
-
-import store.Implicits.given
-given DocumentSchema[User, UserId] with
-
-  def name = "User"
-
-  def primary = 
-    Field("_id", _.id)
-
-  def fields = List(
-    Field("name", _.name),
-    Field("created_at", _.createdAt),
-    Field("verified", _.verified),
-    Field("tags.verified", _.verified),
-  )

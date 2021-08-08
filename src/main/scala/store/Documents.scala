@@ -6,8 +6,8 @@ import cats.implicits.*
 
 case class IndexData[I, K](
   map: Map[PrimitiveValue, Set[K]],
-  stringDecoder: Decoder[I, String],
-  indexEncoder: Encoder[I, IndexableValue]
+  stringDecoder: InputDecoder[I],
+  indexEncoder: IndexEncoder[I]
 ) {
   type IndexDataType = IndexData[I, K]
 

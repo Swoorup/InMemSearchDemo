@@ -6,25 +6,11 @@ import cats.implicits.*
 import cats.effect.{Async, Ref, Sync}
 import java.time.OffsetDateTime
 
-
 // given Encoder[String, PrimitiveValue] with { def encode(value: String) = PrimitiveValue.Str(value) }
 // given Encoder[Long, PrimitiveValue] with { def encode(value: Long) = PrimitiveValue.Num(value) }
 // given Encoder[Boolean, PrimitiveValue] with { def encode(value: Boolean) = PrimitiveValue.Bool(value) }
 // given Decoder[String, IndexedValue.Bool] with 
 //   def decode(value: String) = value.toBooleanOption.map
-
-// given Codec[UserId, String] with
-//   def encode(value: UserId) = 
-//     value.value.toString
-//   def decode(payload: String): Either[String, UserId] = 
-//     payload
-//       .toLongOption
-//       .map(UserId.fromLong)
-//       .toRight("Failed to parse user id.")
-
-// given Encoder[UserId, IndexableValue] with
-//   def encode(value: UserId) = 
-//     PrimitiveValue.Str(value.value.toString)
 
 // trait Indexer[K, I]: 
 //   def search(value: I): List[K]

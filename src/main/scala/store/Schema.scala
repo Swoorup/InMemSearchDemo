@@ -8,7 +8,8 @@ trait Decoder[From, To]:
 
 trait Codec[From, To] extends Encoder[From, To] with Decoder[From, To]
 
-// type UniqueIndex
+type IndexEncoder[T] = Encoder[T, IndexableValue]
+type InputDecoder[T] = Decoder[T, String]
 
 enum PrimitiveValue:
   case Str(content: String)
@@ -16,8 +17,8 @@ enum PrimitiveValue:
   case Num(content: Long)
 
 enum CompositeValue:
-  case Opt(content: Option[CompositeValue])
-  case Arr(content: List[PrimitiveValue])
+  case Opt(content: Option[IndexableValue])
+  case Arr(content: List[IndexableValue])
 
 type IndexableValue = PrimitiveValue | CompositeValue
 
@@ -27,13 +28,10 @@ trait DocumentSchema[T, K]:
     name: String, 
     select: T => I,
     shouldIndex: Boolean = false
-  ) (using Decoder[I, String], Encoder[I, IndexableValue]) {
-    def stringDecoder: Decoder[I, String] = stringDecoder
-    def indexEncoder: Encoder[I, IndexableValue] = indexEncoder
+  ) (using InputDecoder[I], IndexEncoder[I]) {
+    def stringDecoder: InputDecoder[I] = stringDecoder
+    def indexEncoder: IndexEncoder[I] = indexEncoder
   }
-
-  // type DocumentType = T
-  // type PrimaryKeyType = K
 
   def name: String
   def primary: Field[K]
