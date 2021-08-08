@@ -20,8 +20,7 @@ enum IndexCompositeValue:
 
 type IndexValue = IndexPrimitiveValue | IndexCompositeValue
 
-trait DocumentSchema[T, K]:
-
+trait DocumentSchema[T, K] {
   case class IndexField[I](name: String, select: T => I)(using
       InputDecoder[I],
       IndexEncoder[I]
@@ -34,3 +33,4 @@ trait DocumentSchema[T, K]:
   def primary: IndexField[K]
   def nonPrimary: List[IndexField[?]]
   def allFields: List[IndexField[?]] = primary :: nonPrimary
+}

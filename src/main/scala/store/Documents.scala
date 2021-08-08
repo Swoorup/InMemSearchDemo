@@ -14,12 +14,13 @@ case class IndexData[I, K](
   def merge(other: IndexData[I, K]): IndexData[I, K] =
     this.copy(indexToPrimary = (this.indexToPrimary merge other.indexToPrimary) { _ ++ _ })
 
-  def tryParseToIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] =
+  def tryParseToIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] = {
     stringDecoder
       .decode(s)
       .map(indexEncoder.encode)
       .map(Implicits.indexableValues.encode)
       .map(_.head)
+  }
 }
 
 case class Documents[T, K](
@@ -42,9 +43,7 @@ case class Documents[T, K](
 object Documents:
   def empty[T, K]: Documents[T, K] = Documents(Map.empty, Map.empty)
 
-  def fromSingle[T, K](using schema: DocumentSchema[T, K])(
-      document: T
-  ): Documents[T, K] =
+  def fromSingle[T, K](using schema: DocumentSchema[T, K])(document: T): Documents[T, K] = {
     val currentIndexes = schema.nonPrimary.map { field =>
       val primaryKey        = schema.primary.select(document)
       val index             = field.indexEncoder.encode(field.select(document))
@@ -61,8 +60,7 @@ object Documents:
       all = Map(schema.primary.select(document) -> document),
       indexData = currentIndexes
     )
+  }
 
-  def apply[T, K](using schema: DocumentSchema[T, K])(
-      documents: List[T]
-  ): Documents[T, K] =
+  def apply[T, K](using schema: DocumentSchema[T, K])(documents: List[T]): Documents[T, K] =
     documents.map(fromSingle).fold(empty)(_.merge(_))

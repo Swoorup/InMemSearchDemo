@@ -22,18 +22,13 @@ def decodeJsonFile[T](path: String)(using io.circe.Decoder[T]) =
   import io.circe.jawn.*
   IO.fromEither(decodeFile[T](new File(path)))
 
-enum AppCommand:
-  case SearchZendesk
-  case EnumerateSearchableFields
-  case Quit
-
 object InMemDbDemoApp
     extends CommandIOApp(
       name = "InMemDbDemo",
-      header = "InMemDbDemo command line"
+      header = "InMem Database Demo command line"
     ) {
 
-  override def main: Opts[IO[ExitCode]] =
+  override def main: Opts[IO[ExitCode]] = {
     appConfigOpts.map { config =>
       for {
         users   <- decodeJsonFile[List[User]](config.usersJsonPath)
@@ -49,4 +44,5 @@ object InMemDbDemoApp
         _ <- new ConsoleApp(store).run
       } yield ExitCode.Success
     }
+  }
 }

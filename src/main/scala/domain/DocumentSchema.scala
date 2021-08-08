@@ -6,23 +6,25 @@ object DocumentSchema:
   import inmemdb.store.Implicits.given
 
   given InputDecoder[UserId] with
-    def decode(payload: String): Either[String, UserId] =
+    def decode(payload: String): Either[String, UserId] = {
       summon[InputDecoder[Long]]
         .decode(payload)
         .map(UserId.fromLong)
         .left
         .map(_ => "Failed to parse user id.")
+    }
 
   given IndexEncoder[UserId] with
     def encode(value: UserId) = IndexPrimitiveValue.Num(value.value)
 
   given InputDecoder[TicketId] with
-    def decode(payload: String): Either[String, TicketId] =
+    def decode(payload: String): Either[String, TicketId] = {
       summon[InputDecoder[UUID]]
         .decode(payload)
         .map(TicketId.fromUUID)
         .left
         .map(_ => "Failed to parse ticket id.")
+    }
 
   given IndexEncoder[TicketId] with
     def encode(value: TicketId) = IndexPrimitiveValue.Str(value.value.toString)

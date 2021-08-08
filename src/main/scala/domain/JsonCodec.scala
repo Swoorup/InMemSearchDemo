@@ -4,24 +4,22 @@ object JsonCodec:
   import io.circe.{Json, Decoder}
   import java.time.OffsetDateTime
 
-  given Decoder[User] = c =>
+  given Decoder[User] = cursor => {
     for {
-      userId    <- c.downField("_id").as[UserId]
-      name      <- c.downField("name").as[String]
-      createdAt <- c.downField("created_at").as[OffsetDateTime]
-      verified  <- c.downField("verified").as[Option[Boolean]]
-    } yield {
-      User(userId, name, createdAt, verified)
-    }
+      userId    <- cursor.downField("_id").as[UserId]
+      name      <- cursor.downField("name").as[String]
+      createdAt <- cursor.downField("created_at").as[OffsetDateTime]
+      verified  <- cursor.downField("verified").as[Option[Boolean]]
+    } yield User(userId, name, createdAt, verified)
+  }
 
-  given Decoder[Ticket] = c =>
+  given Decoder[Ticket] = cursor => {
     for {
-      ticketId   <- c.downField("_id").as[TicketId]
-      createdAt  <- c.downField("created_at").as[OffsetDateTime]
-      ticketType <- c.downField("type").as[Option[String]]
-      subject    <- c.downField("subject").as[String]
-      assigneeId <- c.downField("assignee_id").as[Option[UserId]]
-      tags       <- c.downField("tags").as[List[String]]
-    } yield {
-      Ticket(ticketId, createdAt, ticketType, subject, assigneeId, tags)
-    }
+      ticketId   <- cursor.downField("_id").as[TicketId]
+      createdAt  <- cursor.downField("created_at").as[OffsetDateTime]
+      ticketType <- cursor.downField("type").as[Option[String]]
+      subject    <- cursor.downField("subject").as[String]
+      assigneeId <- cursor.downField("assignee_id").as[Option[UserId]]
+      tags       <- cursor.downField("tags").as[List[String]]
+    } yield Ticket(ticketId, createdAt, ticketType, subject, assigneeId, tags)
+  }
