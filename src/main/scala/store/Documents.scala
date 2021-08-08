@@ -2,26 +2,6 @@ package inmemdb.store
 
 import inmemdb.common.*
 import inmemdb.store.DocumentSchema
-import cats.implicits.*
-
-case class IndexData[I, K](
-    indexToPrimary: Map[IndexPrimitiveValue, Set[K]],
-    stringDecoder: InputDecoder[I],
-    indexEncoder: IndexEncoder[I]
-) {
-  type IndexDataType = IndexData[I, K]
-
-  def merge(other: IndexData[I, K]): IndexData[I, K] =
-    this.copy(indexToPrimary = (this.indexToPrimary merge other.indexToPrimary) { _ ++ _ })
-
-  def tryParseToIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] = {
-    stringDecoder
-      .decode(s)
-      .map(indexEncoder.encode)
-      .map(Implicits.indexableValues.encode)
-      .map(_.head)
-  }
-}
 
 case class Documents[T, K](
     all: Map[K, T],
@@ -44,21 +24,9 @@ object Documents:
   def empty[T, K]: Documents[T, K] = Documents(Map.empty, Map.empty)
 
   def fromSingle[T, K](using schema: DocumentSchema[T, K])(document: T): Documents[T, K] = {
-    val currentIndexes = schema.nonPrimary.map { field =>
-      val primaryKey        = schema.primary.select(document)
-      val index             = field.indexEncoder.encode(field.select(document))
-      val primitiveIndex    = Implicits.indexableValues.encode(index)
-      val nonUniqueIndexMap = primitiveIndex.map(_ -> Set(primaryKey)).toMap
-      field.name -> IndexData(
-        nonUniqueIndexMap,
-        field.inputDecoder,
-        field.indexEncoder
-      )
-    }.toMap
-
     Documents(
       all = Map(schema.primary.select(document) -> document),
-      indexData = currentIndexes
+      indexData = schema.nonPrimary.map(field => field.name -> IndexData(document, field)).toMap
     )
   }
 

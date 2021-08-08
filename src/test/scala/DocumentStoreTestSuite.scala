@@ -1,6 +1,14 @@
-import cats.effect.{IO, SyncIO}
+import cats.effect.{IO, SyncIO, Resource}
 import munit.CatsEffectSuite
-class ExampleSuite extends CatsEffectSuite {
+
+class DocumentStoreTestSuite extends CatsEffectSuite {
+  val myFixture = ResourceSuiteLocalFixture(
+    "my-fixture",
+    Resource.make(IO.unit)(_ => IO.unit)
+  )
+
+  override def munitFixtures = List(myFixture)
+
   test("tests can return IO[Unit] with assertions expressed via a map") {
     IO(42).map(it => assertEquals(it, 42))
   }

@@ -19,7 +19,7 @@ private object ConsoleAppUtil:
     }
   }
 
-  extension (list: List[String]) def displayString: String = list.mkString("[", ",", "]")
+  extension (list: List[String]) def displayString: String = list.mkString("[", ", ", "]")
 
   extension [F[_]: Console](console: Console[F])
     def printlnInfo(msg: String): F[Unit] = {
