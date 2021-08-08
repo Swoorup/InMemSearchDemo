@@ -76,6 +76,7 @@ private class DocumentStoreImpl[F[_]: Async](
       for {
         documents <- Either.fromOption(documentsOpt, s"No data present for schema ${schema.name}")
         currentIndexMap <- Either.fromOption(documents.indexes.get(field), s"Schema ${schema.name} does not have field $field")
+        // indexToSearch <- curr
         // searchResult <- currentIndexMap.get
       } yield ???
     }
