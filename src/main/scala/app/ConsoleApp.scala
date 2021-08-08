@@ -97,7 +97,7 @@ class ConsoleApp[F[_]: Console: Monad](db: Database[F]) {
       _            <- Console[F].println("")
       searchResult <- db.searchByField[T, K](searchTerm, searchValue)
       _ <- searchResult match
-        case Left(error) => Console[F].printlnErr(s"Error occurred: $error")
+        case Left(error) => Console[F].printlnErr(s"Error occurred: ${error.msg}")
         case Right(results) =>
           if results.isEmpty then Console[F].println("No results found")
           else handleResults(results)

@@ -42,9 +42,9 @@ val user = User(
 
 given IORuntime = IORuntime.global
 val app = for {
-  store   <- Database[IO]
-  _       <- store.bulkInsert[User, UserId](List(user))
-  result  <- store.searchByField[User, UserId]("_id", "131231")
+  db   <- Database[IO]
+  _       <- db.bulkInsert[User, UserId](List(user))
+  result  <- db.searchByField[User, UserId]("_id", "131231")
 } yield { result }
 
 app.unsafeRunSync()

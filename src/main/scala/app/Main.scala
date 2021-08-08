@@ -34,7 +34,7 @@ object InMemDbDemoApp
         users   <- decodeJsonFile[List[User]](config.usersJsonPath)
         tickets <- decodeJsonFile[List[Ticket]](config.ticketsJsonPath)
 
-        // initialize the in memory document store
+        // initialize the in memory database
         db <- Database[IO]
 
         // add initial data
