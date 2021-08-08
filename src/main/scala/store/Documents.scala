@@ -29,14 +29,14 @@ case class Documents[T, K](
 ) { 
   def merge(other: Documents[T, K]): Documents[T, K] = {
     val newIndexes = (this.indexData merge other.indexData) { 
-      // safe operation as same field should have same value type
+      // asInstanceOf is a safe operation as both the fields should have the same type
       (idx1, idx2) => idx1.merge(idx2.asInstanceOf[idx1.IndexDataType]) 
     }
 
     this.copy(this.all ++ other.all, newIndexes)
   }
 
-  def addDocument(using S: DocumentSchema[T, K])(document: T): Documents[T, K] = 
+  def addDocument(using DocumentSchema[T, K])(document: T): Documents[T, K] = 
     this.merge(Documents.fromSingle(document))
 }
 

@@ -29,8 +29,8 @@ trait DocumentSchema[T, K]:
     select: T => I,
     shouldIndex: Boolean = false
   ) (using InputDecoder[I], IndexEncoder[I]) {
-    def stringDecoder: InputDecoder[I] = stringDecoder
-    def indexEncoder: IndexEncoder[I] = indexEncoder
+    def stringDecoder: InputDecoder[I] = summon[InputDecoder[I]]
+    def indexEncoder: IndexEncoder[I] = summon[IndexEncoder[I]]
   }
 
   def name: String

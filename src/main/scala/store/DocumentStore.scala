@@ -28,6 +28,7 @@ type DocumentStoreError = String
 
 trait DocumentStore[F[_]]:
   def bulkInsert[T, K](using DocumentSchema[T, K])(objects: List[T]): F[Unit]
+  def lookUp[T, K](using DocumentSchema[T, K])(key: K): F[Option[T]]
   def searchByField[T, K](using DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]]
 
 object DocumentStore:
@@ -54,6 +55,20 @@ private class DocumentStoreImpl[F[_]: Async](
       _                     <- documentsSchemaMapRef.modify(ds => (ds.+(schema -> updatedDocuments), ds))
     } yield ()
 
+  def lookUp[T, K](using schema: DocumentSchema[T, K])(key: K): F[Option[T]] = 
+    for {
+      documentsSchemaMap    <- documentsSchemaMapRef.get
+      documentsOpt          <- Sync[F].delay(documentsSchemaMap.get(schema))
+    } yield {
+      for {
+        documents <- documentsOpt
+        document <- documents.all.asInstanceOf[Map[K, T]].get(key)
+      } yield {
+        document.asInstanceOf[T]
+      }
+    }
+
+
   def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, value: String): F[Either[DocumentStoreError, List[T]]] = 
     for {
       documentsSchemaMap    <- documentsSchemaMapRef.get
@@ -63,10 +78,10 @@ private class DocumentStoreImpl[F[_]: Async](
         documents <- Either.fromOption(documentsOpt, s"No data present for schema ${schema.name}")
         primaryKeys <- 
           if field == schema.primary.name then 
-            // search using primary key
+            // search using primary indexes
             schema.primary.stringDecoder.decode(value).map(Set(_))
           else 
-            // search using non primary keys
+            // search using non primary indexes
             for { 
               indexData <- Either.fromOption(documents.indexData.get(field), s"Schema ${schema.name} does not have field $field")
               indexToSearch <- indexData.tryParseToIndexPrimitive(value)

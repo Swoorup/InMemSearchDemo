@@ -10,7 +10,7 @@ import cats.effect.unsafe.IORuntime
 
 import java.time.*
 
-val a = User(
+val user = User(
   UserId.fromLong(1231231L),
   "asdcasdcsad",
   OffsetDateTime.now,
@@ -19,11 +19,9 @@ val a = User(
 
 given IORuntime = IORuntime.global
 val app = for {
-  store <- DocumentStore[IO]
-  _ <- store.bulkInsert[User, UserId](List(a))
-  result <- store.searchByField[User, UserId]("veified", "true")
-} yield {
-  result
-}
+  store   <- DocumentStore[IO]
+  _       <- store.bulkInsert[User, UserId](List(user))
+  result  <- store.searchByField[User, UserId]("_id", "131231")
+} yield { result }
 
 app.unsafeRunSync()
