@@ -10,6 +10,27 @@ import inmemdb.domain.JsonCodec.given
 import inmemdb.domain.DocumentSchema.given
 import inmemdb.store.DocumentSchema
 
+extension (str: String) def padField: String = str.padTo(18, ' ')
+
+extension (list: List[String]) def displayString: String = list.mkString("[", ",", "]")
+
+given userShow: Show[User] with
+  def show(t: User): String =
+    import scala.Console.*
+    s"${"_id".padField}${t.id}\n" ++
+      s"${"name".padField}${t.name}\n" ++
+      s"${"created_at".padField}${t.createdAt}\n" ++
+      s"${"verified".padField}${t.verified.getOrElse("")}"
+
+given ticketShow: Show[Ticket] with
+  def show(t: Ticket): String =
+    import scala.Console.*
+    s"${"_id".padField}${t.id}\n" ++
+      s"${"type".padField}${t.ticketType.getOrElse("")}\n" ++
+      s"${"subject".padField}${t.subject}\n" ++
+      s"${"assignee_id".padField}${t.assigneeId.getOrElse("")}\n" ++
+      s"${"tags".padField}${t.tags.displayString}"
+
 class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
   val userSchema    = summon[DocumentSchema[User, UserId]]
   val ticketSchema  = summon[DocumentSchema[Ticket, TicketId]]
@@ -48,8 +69,22 @@ class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
 
   def displayUser(user: User): F[Unit] =
     for {
-      _ <- userSchema.allFields
-        .traverse_(field => printlnSuccess(s"${field.name.padTo(30, ' ')}${field.select(user)}"))
+      _              <- printlnSuccess(userShow.show(user))
+      ticketsForUser <- store.searchByField[Ticket, TicketId]("assignee_id", user.id.toString)
+      _ <- ticketsForUser match
+        case Left(error) => printlnErr(s"Error occurred while getting tickets: $error")
+        case Right(tickets) =>
+          val displayTickets = tickets.map(_.subject).displayString
+          printlnSuccess(s"${"tickets".padField}$displayTickets")
+      _ <- Console[F].println("----------------------------------------------------------------")
+    } yield ()
+
+  def displayTicket(ticket: Ticket): F[Unit] =
+    for {
+      _    <- printlnSuccess(ticketShow.show(ticket))
+      user <- ticket.assigneeId.traverse(userId => store.lookUp[User, UserId](userId)).map(_.flatten)
+      _    <- user.map(_.name).traverse { name => printlnSuccess(s"${"assignee_name".padField}$name") }
+      _    <- Console[F].println("----------------------------------------------------------------")
     } yield ()
 
   def searchUsers: F[Unit] = {
@@ -71,7 +106,7 @@ class ConsoleApp[F[_]: Console: Monad](store: DocumentStore[F]) {
       result <- store.searchByField[Ticket, TicketId](searchTerm, searchValue)
       _ <- result match
         case Left(error)    => printlnErr(s"Error occurred: $error")
-        case Right(success) => printlnSuccess(result.toString)
+        case Right(tickets) => tickets.traverse_(displayTicket)
     } yield ()
   }
 
