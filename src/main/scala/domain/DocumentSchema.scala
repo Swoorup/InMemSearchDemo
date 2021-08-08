@@ -30,7 +30,7 @@ object DocumentSchema:
   given DocumentSchema[User, UserId] with
     def name    = "User"
     def primary = IndexField("_id", _.id)
-    def fields = List(
+    def nonPrimary = List(
       IndexField("name", _.name),
       IndexField("created_at", _.createdAt),
       IndexField("verified", _.verified)
@@ -39,7 +39,7 @@ object DocumentSchema:
   given DocumentSchema[Ticket, TicketId] with
     def name    = "Ticket"
     def primary = IndexField("_id", _.id)
-    def fields = List(
+    def nonPrimary = List(
       IndexField("created_at", _.createdAt),
       IndexField("type", _.ticketType),
       IndexField("subject", _.subject),

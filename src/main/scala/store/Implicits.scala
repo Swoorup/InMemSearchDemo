@@ -45,13 +45,10 @@ object Implicits:
     def decode(v: String) = Right(v)
 
   given InputDecoder[OffsetDateTime] with
-    def decode(v: String) =
-      Try { OffsetDateTime.parse(v) }.toOption
-        .toRight("Failed to parse date time offset.")
+    def decode(v: String) = Try { OffsetDateTime.parse(v) }.toOption.toRight("Failed to parse date time offset.")
 
   given InputDecoder[UUID] with
-    def decode(v: String) =
-      Try { UUID.fromString(v) }.toOption.toRight("Failed to parse UUID.")
+    def decode(v: String) = Try { UUID.fromString(v) }.toOption.toRight("Failed to parse UUID.")
 
   given [T](using inner: InputDecoder[T]): InputDecoder[Option[T]] with
     def decode(v: String) = inner.decode(v).map(Some(_))

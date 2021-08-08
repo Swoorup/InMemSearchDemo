@@ -26,10 +26,11 @@ trait DocumentSchema[T, K]:
       InputDecoder[I],
       IndexEncoder[I]
   ) {
-    def stringDecoder: InputDecoder[I] = summon[InputDecoder[I]]
-    def indexEncoder: IndexEncoder[I]  = summon[IndexEncoder[I]]
+    def inputDecoder: InputDecoder[I] = summon[InputDecoder[I]]
+    def indexEncoder: IndexEncoder[I] = summon[IndexEncoder[I]]
   }
 
   def name: String
   def primary: IndexField[K]
-  def fields: List[IndexField[?]]
+  def nonPrimary: List[IndexField[?]]
+  def allFields: List[IndexField[?]] = primary :: nonPrimary

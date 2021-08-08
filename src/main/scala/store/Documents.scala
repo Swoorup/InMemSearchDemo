@@ -5,14 +5,14 @@ import inmemdb.store.DocumentSchema
 import cats.implicits.*
 
 case class IndexData[I, K](
-    map: Map[IndexPrimitiveValue, Set[K]],
+    indexToPrimary: Map[IndexPrimitiveValue, Set[K]],
     stringDecoder: InputDecoder[I],
     indexEncoder: IndexEncoder[I]
 ) {
   type IndexDataType = IndexData[I, K]
 
   def merge(other: IndexData[I, K]): IndexData[I, K] =
-    this.copy(map = (this.map merge other.map) { _ ++ _ })
+    this.copy(indexToPrimary = (this.indexToPrimary merge other.indexToPrimary) { _ ++ _ })
 
   def tryParseToIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] =
     stringDecoder
@@ -45,14 +45,14 @@ object Documents:
   def fromSingle[T, K](using schema: DocumentSchema[T, K])(
       document: T
   ): Documents[T, K] =
-    val currentIndexes = schema.fields.map { field =>
+    val currentIndexes = schema.nonPrimary.map { field =>
       val primaryKey        = schema.primary.select(document)
       val index             = field.indexEncoder.encode(field.select(document))
       val primitiveIndex    = Implicits.indexableValues.encode(index)
       val nonUniqueIndexMap = primitiveIndex.map(_ -> Set(primaryKey)).toMap
       field.name -> IndexData(
         nonUniqueIndexMap,
-        field.stringDecoder,
+        field.inputDecoder,
         field.indexEncoder
       )
     }.toMap

@@ -17,10 +17,8 @@ trait DocumentStore[F[_]]:
 object DocumentStore:
   def apply[F[_]: Async]: F[DocumentStore[F]] =
     for {
-      documentsRef <- Ref.of[F, Map[DocumentSchema[?, ?], Documents[?, ?]]](
-        Map.empty
-      )
-      store <- Sync[F].delay(new DocumentStoreImpl[F](documentsRef))
+      documentsRef <- Ref.of[F, Map[DocumentSchema[?, ?], Documents[?, ?]]](Map.empty)
+      store        <- Sync[F].delay(new DocumentStoreImpl[F](documentsRef))
     } yield store
 
 private class DocumentStoreImpl[F[_]: Async](
@@ -28,18 +26,15 @@ private class DocumentStoreImpl[F[_]: Async](
 ) extends DocumentStore[F] {
   import Implicits.*
 
-  def bulkInsert[T, K](using
-      schema: DocumentSchema[T, K]
-  )(objects: List[T]): F[Unit] =
+  def bulkInsert[T, K](using schema: DocumentSchema[T, K])(objects: List[T]): F[Unit] =
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsToInsert  <- Sync[F].delay(Documents(objects))
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
       updatedDocuments <- Sync[F].delay {
         documentsOpt match
-          case None => documentsToInsert
-          case Some(docs) =>
-            docs.asInstanceOf[Documents[T, K]].merge(documentsToInsert)
+          case None       => documentsToInsert
+          case Some(docs) => docs.asInstanceOf[Documents[T, K]].merge(documentsToInsert)
       }
       _ <- documentsSchemaMapRef.modify(ds => (ds.+(schema -> updatedDocuments), ds))
     } yield ()
@@ -52,9 +47,7 @@ private class DocumentStoreImpl[F[_]: Async](
       for {
         documents <- documentsOpt
         document  <- documents.all.asInstanceOf[Map[K, T]].get(key)
-      } yield {
-        document.asInstanceOf[T]
-      }
+      } yield document.asInstanceOf[T]
     }
 
   def searchByField[T, K](using
@@ -65,14 +58,11 @@ private class DocumentStoreImpl[F[_]: Async](
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
     } yield {
       for {
-        documents <- Either.fromOption(
-          documentsOpt,
-          s"No data present for schema ${schema.name}"
-        )
+        documents <- Either.fromOption(documentsOpt, s"No data present for schema ${schema.name}")
         primaryKeys <-
           if field == schema.primary.name then
             // search using primary indexes
-            schema.primary.stringDecoder.decode(value).map(Set(_))
+            schema.primary.inputDecoder.decode(value).map(Set(_))
           else
             // search using non primary indexes
             for {
@@ -81,7 +71,7 @@ private class DocumentStoreImpl[F[_]: Async](
                 s"Schema ${schema.name} does not have field $field"
               )
               indexToSearch <- indexData.tryParseToIndexPrimitive(value)
-            } yield indexData.map
+            } yield indexData.indexToPrimary
               .get(indexToSearch)
               .getOrElse(Set.empty)
               .asInstanceOf[Set[K]]
