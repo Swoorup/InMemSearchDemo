@@ -57,7 +57,8 @@ To query a field. You will have to implicitly pass the `DocumentSchema` along wi
 
 ## Future improvements
 
-* Pluggable indexers. (Geospatial indexing, string prefix)
+* Type-specific indexers. All indexes fields must be converted to internal database representation `IndexValue`. But this is currently under utilized and only supports full value matches. 
+For example, it should be possible to add Geospatial indexing, Trie-based indexing etc.
 * Macro to derive the schema automatically from case classes.
 
 ## Demo 
