@@ -6,6 +6,7 @@ lazy val root = project
     name := "inmem-search-demo",
     version := "0.1.0",
     ThisBuild / scalaVersion := scala3Version,
+    ThisBuild / githubWorkflowPublishTargetBranches := Seq(),
     libraryDependencies ++=
       Seq(
         // functional programming
