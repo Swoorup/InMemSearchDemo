@@ -53,7 +53,7 @@ To query a field. You will have to implicitly pass the `DocumentSchema` along wi
 * Only full value matching is supported when searching via fields. However, for arrays it supports matching any of the array elements.
 * There is currently no way to query optional fields whose values are not present.
 * Only immutable constructs i.e `case classes` must be used for runtime safety.
-* Currently updating the same document already present in the database is unsupported due to stale indexes not being deleted.
+* Currently updating the same document already present in the database (identified by `_id`) is unsupported due to stale indexes not being deleted. Best suited of append only workloads. 
 
 ## Future improvements
 
