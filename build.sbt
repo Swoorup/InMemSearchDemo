@@ -5,7 +5,7 @@ lazy val root = project
   .settings(
     name := "inmem-search-demo",
     version := "0.1.0",
-    scalaVersion := scala3Version,
+    ThisBuild / scalaVersion := scala3Version,
     libraryDependencies ++=
       Seq(
         // functional programming
