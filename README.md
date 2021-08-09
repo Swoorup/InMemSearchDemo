@@ -52,3 +52,7 @@ To add in-memory supported for any type you would need to provide `DocumentSchem
 ## Future improvements
 
 * Pluggable indexers. (Geospatial indexing, string prefix)
+
+## Demo 
+
+[![asciicast](https://asciinema.org/a/m27QSxw5GC1EYCRep4c59Fn56.svg)](https://asciinema.org/a/m27QSxw5GC1EYCRep4c59Fn56)
