@@ -82,7 +82,7 @@ class ConsoleApp[F[_]: Console: Monad](db: Database[F]) {
   def displayTicket(ticket: Ticket): F[Unit] = {
     for {
       _    <- Console[F].printlnSuccess(ticketShow.show(ticket))
-      user <- ticket.assigneeId.traverse(userId => db.lookUp[User, UserId](userId)).map(_.flatten)
+      user <- ticket.assigneeId.traverse(userId => db.searchByPrimaryKey[User, UserId](userId)).map(_.flatten)
       _    <- user.map(_.name).traverse { name => Console[F].printlnSuccess(s"${"assignee_name".padField}$name") }
       _    <- Console[F].println("----------------------------------------------------------------")
     } yield ()

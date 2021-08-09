@@ -15,7 +15,7 @@ enum SearchError(val msg: String):
 
 trait Database[F[_]]:
   def bulkInsert[T, K](using DocumentSchema[T, K])(objects: List[T]): F[Unit]
-  def lookUp[T, K](using DocumentSchema[T, K])(key: K): F[Option[T]]
+  def searchByPrimaryKey[T, K](using DocumentSchema[T, K])(key: K): F[Option[T]]
   def searchByField[T, K](using DocumentSchema[T, K])(field: String, value: String): F[Either[SearchError, List[T]]]
 
 object Database:
@@ -45,7 +45,7 @@ private class DatabaseImpl[F[_]: Async](
     } yield ()
   }
 
-  def lookUp[T, K](using schema: DocumentSchema[T, K])(key: K): F[Option[T]] = {
+  def searchByPrimaryKey[T, K](using schema: DocumentSchema[T, K])(key: K): F[Option[T]] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
