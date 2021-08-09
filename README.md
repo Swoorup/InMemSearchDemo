@@ -11,17 +11,19 @@ A demonstration of in-memory document database, powered by [cats-effect](https:/
 ## Running
 
 The repository provides sample json files for the type `User` and `Ticket` in the directory `./sample-data/`. 
+
+To view supported command line options, you can run:
+```shell
+sbt "run --help"
+```
+
 You can launch the demo app using the following sbt command.
 
 ```shell
 sbt "run --users sample-data/users.json --tickets sample-data/tickets.json"
 ```
 
-To view supported command line options, you can run:
-
-```shell
-sbt "run --help"
-```
+As outlined in the specs, once run you are presented with a `Console` which allows you to search tickets or users.
 
 ## Test
 
@@ -43,6 +45,8 @@ To add in-memory supported for any type you would need to provide `DocumentSchem
       IndexField("tags", _.tags)
     )
 ```
+
+To query a field. You will have to implicitly pass the `DocumentSchema` along with specifying the type parameters when querying with the `Database` trait, so it is able to match the correct documents. Not doing so will result in compiler error.
 
 ## Notes/Assumptions
 
