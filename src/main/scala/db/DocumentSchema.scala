@@ -6,10 +6,13 @@ trait DocumentSchema[T, K] {
 
   /** Describes individual index field of the document
     */
-  case class IndexField[I](name: String, select: T => I)(using
-      inputDecoder: InputDecoder[I],
-      indexEncoder: IndexEncoder[I]
-  ) {
+  case class IndexField[I](
+      /** The field name of the index */
+      name: String,
+      /** The selector function that maps from the document to the field */
+      select: T => I
+  )(using inputDecoder: InputDecoder[I], indexEncoder: IndexEncoder[I]) {
+
     def decodeInput(str: String): Either[String, I] =
       inputDecoder(str)
 
@@ -25,8 +28,14 @@ trait DocumentSchema[T, K] {
     }
   }
 
+  /** name of the schema */
   def name: String
+
+  /** primary index field of the document */
   def primary: IndexField[K]
+
+  /** all non-primary index fields of the document */
   def nonPrimary: List[IndexField[?]]
+
   def allFields: List[IndexField[?]] = primary :: nonPrimary
 }

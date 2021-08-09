@@ -1,10 +1,17 @@
 # In-Memory Document Database Demo
 
-A demonstration of in-memory document database, powered by [cats-effect](https://typelevel.org/cats-effect/).
+A demonstration of in-memory document database, powered by [cats-effect](https://typelevel.org/cats-effect/) and [scala 3](https://docs.scala-lang.org/scala3/).
+
+## Build Requirements.
+
+* Scala 3 compiler.
+* Java Virtual Machine, version 11 or greater.
+* Scala Build Tool `sbt`
 
 ## Running
 
-The repository provides sample json in the directory `./sample-data/`. You can launch the demo app using the following sbt command.
+The repository provides sample json files for the type `User` and `Ticket` in the directory `./sample-data/`. 
+You can launch the demo app using the following sbt command.
 
 ```shell
 sbt "run --users sample-data/users.json --tickets sample-data/tickets.json"
@@ -16,11 +23,32 @@ To view supported command line options, you can run:
 sbt "run --help"
 ```
 
-## sbt project compiled with Scala 3
+## Test
 
-### Usage
+Test can be run with the command: `sbt test`
 
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
+## Adding new schema for type for indexing.
 
-For more information on the sbt-dotty plugin, see the
-[scala3-example-project](https://github.com/scala/scala3-example-project/blob/main/README.md).
+To add in-memory supported for any type you would need to provide `DocumentSchema[T, K]` where `T` is the type of the object being stored and `K` refers to its primary key. For the ticket example, the schema is declared as the following:
+
+```scala
+  given DocumentSchema[Ticket, TicketId] with
+    def name    = "Ticket"
+    def primary = IndexField("_id", _.id)
+    def nonPrimary = List(
+      IndexField("created_at", _.createdAt),
+      IndexField("type", _.ticketType),
+      IndexField("subject", _.subject),
+      IndexField("assignee_id", _.assigneeId),
+      IndexField("tags", _.tags)
+    )
+```
+
+## Notes
+
+* Currently only full value matching is supported when searching via fields. However, for arrays it supports matching any of the array elements.
+* Only immutable constructs i.e `case classes` must be used for runtime safety.
+
+## Future improvements
+
+* Pluggable indexers. (Geospatial indexing, string prefix)

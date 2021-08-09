@@ -38,8 +38,11 @@ object InMemDbDemoApp
         db <- Database[IO]
 
         // add initial data
-        _ <- db.bulkInsert[User, UserId](users)
-        _ <- db.bulkInsert[Ticket, TicketId](tickets)
+        insertResult <- db.bulkInsert[User, UserId](users)
+        _            <- insertResult.leftTraverse(err => IO.println(s"Error occurred while inserting users: ${err.msg}"))
+
+        insertResult <- db.bulkInsert[Ticket, TicketId](tickets)
+        _            <- insertResult.leftTraverse(err => IO.println(s"Error occurred while inserting tickets: ${err.msg}"))
 
         _ <- new ConsoleApp(db).run
       } yield ExitCode.Success

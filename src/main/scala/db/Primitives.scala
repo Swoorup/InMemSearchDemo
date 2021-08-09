@@ -6,17 +6,22 @@ trait Encoder[From, To]:
 trait Decoder[From, To]:
   def apply(value: To): Either[String, From]
 
+/** Describes encoding the field type to the index primitives
+*/
 type IndexEncoder[T] = Encoder[T, IndexValue]
+
+/** Describes decoding string to the field of the object
+*/
 type InputDecoder[T] = Decoder[T, String]
 
-/** The primitive value in which all the fields of the document are represented in.
+/** The primitive value in which all the fields of the document are represented in the database.
   */
 enum IndexPrimitiveValue:
   case Str(content: String)
   case Bool(content: Boolean)
   case Num(content: Long)
 
-/** The composite index adds supports index support to compound types like Option of Arrays, Arrays, etc
+/** The composite index allows supports index support to compound types like Option of Arrays, Arrays, etc
   */
 enum IndexCompositeValue:
   case Opt(content: Option[IndexValue])

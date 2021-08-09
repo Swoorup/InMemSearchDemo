@@ -4,7 +4,7 @@ import inmemdb.common.*
 import inmemdb.db.DocumentSchema
 import cats.implicits.*
 
-/** Container for a single index
+/** Container for a single index field data for the document
   */
 case class IndexData[T, K, I](
     indexToPrimary: Map[IndexPrimitiveValue, Set[K]],
