@@ -1,32 +1,28 @@
 package inmemdb.db
 
-trait Encoder[From, To]:
-  def encode(value: From): To
-
-trait Decoder[From, To]:
-  def decode(value: To): Either[String, From]
-
-type IndexEncoder[T] = Encoder[T, IndexValue]
-type InputDecoder[T] = Decoder[T, String]
-
-enum IndexPrimitiveValue:
-  case Str(content: String)
-  case Bool(content: Boolean)
-  case Num(content: Long)
-
-enum IndexCompositeValue:
-  case Opt(content: Option[IndexValue])
-  case Arr(content: List[IndexValue])
-
-type IndexValue = IndexPrimitiveValue | IndexCompositeValue
-
+/** Trait that describes the schema of the document. `T` is the type of the document, whereas `K` is the primary key of the document
+  */
 trait DocumentSchema[T, K] {
+
+  /** Describes individual index field of the document
+    */
   case class IndexField[I](name: String, select: T => I)(using
-      InputDecoder[I],
-      IndexEncoder[I]
+      inputDecoder: InputDecoder[I],
+      indexEncoder: IndexEncoder[I]
   ) {
-    def inputDecoder: InputDecoder[I] = summon[InputDecoder[I]]
-    def indexEncoder: IndexEncoder[I] = summon[IndexEncoder[I]]
+    def decodeInput(str: String): Either[String, I] =
+      inputDecoder(str)
+
+    def pickleFieldFromDocument(document: T): List[IndexPrimitiveValue] =
+      val encoded = indexEncoder(this.select(document))
+      IndexValue.decomposeToPrimitive(encoded)
+
+    def getIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] = {
+      inputDecoder(s)
+        .map(indexEncoder.apply)
+        .map(IndexValue.decomposeToPrimitive)
+        .map(_.head)
+    }
   }
 
   def name: String

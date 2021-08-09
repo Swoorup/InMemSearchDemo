@@ -4,31 +4,23 @@ import inmemdb.common.*
 import inmemdb.db.DocumentSchema
 import cats.implicits.*
 
-case class IndexData[I, K](
+/** Container for a single index
+  */
+case class IndexData[T, K, I](
     indexToPrimary: Map[IndexPrimitiveValue, Set[K]],
-    stringDecoder: InputDecoder[I],
-    indexEncoder: IndexEncoder[I]
+    field: DocumentSchema[T, K]#IndexField[I]
 ) {
-  type IndexDataType = IndexData[I, K]
+  type IndexDataType = IndexData[T, K, I]
 
-  def merge(other: IndexData[I, K]): IndexData[I, K] =
+  def merge(other: IndexData[T, K, I]): IndexData[T, K, I] =
     this.copy(indexToPrimary = (this.indexToPrimary merge other.indexToPrimary) { _ ++ _ })
-
-  def tryParseToIndexPrimitive(s: String): Either[String, IndexPrimitiveValue] = {
-    stringDecoder
-      .decode(s)
-      .map(indexEncoder.encode)
-      .map(Implicits.indexableValues.encode)
-      .map(_.head)
-  }
 }
 
 object IndexData:
-  def apply[T, K, I](using schema: DocumentSchema[T, K])(document: T, field: schema.IndexField[I]): IndexData[I, K] = {
+  def fromDocumentField[T, K, I](using schema: DocumentSchema[T, K])(document: T, field: schema.IndexField[I]): IndexData[T, K, I] = {
     val primaryKey            = schema.primary.select(document)
-    val encodedIndex          = field.indexEncoder.encode(field.select(document))
-    val encodedPrimitiveIndex = Implicits.indexableValues.encode(encodedIndex)
+    val encodedPrimitiveIndex = field.pickleFieldFromDocument(document)
     val nonUniqueIndexMap     = encodedPrimitiveIndex.map(_ -> Set(primaryKey)).toMap
 
-    IndexData(nonUniqueIndexMap, field.inputDecoder, field.indexEncoder)
+    IndexData(nonUniqueIndexMap, field)
   }

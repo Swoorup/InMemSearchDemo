@@ -6,52 +6,27 @@ object Implicits:
   import scala.util.Try
 
   // default index encoders
-  given IndexEncoder[Long] with
-    def encode(v: Long) = IndexPrimitiveValue.Num(v)
-
-  given IndexEncoder[String] with
-    def encode(v: String) = IndexPrimitiveValue.Str(v)
-
-  given IndexEncoder[Boolean] with
-    def encode(v: Boolean) = IndexPrimitiveValue.Bool(v)
-
-  given IndexEncoder[OffsetDateTime] with
-    def encode(v: OffsetDateTime) = IndexPrimitiveValue.Str(v.toString)
-
-  given IndexEncoder[UUID] with
-    def encode(v: UUID) = IndexPrimitiveValue.Str(v.toString)
+  given IndexEncoder[Long]           = IndexPrimitiveValue.Num(_)
+  given IndexEncoder[String]         = IndexPrimitiveValue.Str(_)
+  given IndexEncoder[Boolean]        = IndexPrimitiveValue.Bool(_)
+  given IndexEncoder[OffsetDateTime] = v => IndexPrimitiveValue.Str(v.toString)
+  given IndexEncoder[UUID]           = v => IndexPrimitiveValue.Str(v.toString)
 
   given [T](using inner: IndexEncoder[T]): IndexEncoder[Option[T]] with
-    def encode(vOpt: Option[T]) = IndexCompositeValue.Opt(vOpt.map(inner.encode(_)))
+    def apply(vOpt: Option[T]) = IndexCompositeValue.Opt(vOpt.map(inner(_)))
 
   given [T](using inner: IndexEncoder[T]): IndexEncoder[List[T]] with
-    def encode(vList: List[T]) = IndexCompositeValue.Arr(vList.map(inner.encode(_)))
-
-  given indexableValues: Encoder[IndexValue, List[IndexPrimitiveValue]] with
-    def encode(value: IndexValue) = value match {
-      case t: IndexPrimitiveValue           => List(t)
-      case IndexCompositeValue.Opt(content) => content.toList.map(encode).flatten
-      case IndexCompositeValue.Arr(content) => content.map(encode).flatten
-    }
+    def apply(vList: List[T]) = IndexCompositeValue.Arr(vList.map(inner(_)))
 
   // default input decoders
-  given InputDecoder[Long] with
-    def decode(v: String) = v.toLongOption.toRight("Failed to parse number.")
-
-  given InputDecoder[Boolean] with
-    def decode(v: String) = v.toBooleanOption.toRight("Failed to parse bool.")
-
-  given InputDecoder[String] with
-    def decode(v: String) = Right(v)
-
-  given InputDecoder[OffsetDateTime] with
-    def decode(v: String) = Try { OffsetDateTime.parse(v) }.toOption.toRight("Failed to parse date time offset.")
-
-  given InputDecoder[UUID] with
-    def decode(v: String) = Try { UUID.fromString(v) }.toOption.toRight("Failed to parse UUID.")
+  given InputDecoder[Long]           = _.toLongOption.toRight("Failed to parse number.")
+  given InputDecoder[Boolean]        = _.toBooleanOption.toRight("Failed to parse bool.")
+  given InputDecoder[String]         = Right(_)
+  given InputDecoder[OffsetDateTime] = v => Try(OffsetDateTime.parse(v)).toOption.toRight("Failed to parse date time offset.")
+  given InputDecoder[UUID]           = v => Try(UUID.fromString(v)).toOption.toRight("Failed to parse UUID.")
 
   given [T](using inner: InputDecoder[T]): InputDecoder[Option[T]] with
-    def decode(v: String) = inner.decode(v).map(Some(_))
+    def apply(v: String) = inner(v).map(Some(_))
 
   given [T](using inner: InputDecoder[T]): InputDecoder[List[T]] with
-    def decode(v: String) = inner.decode(v).map(List(_))
+    def apply(v: String) = inner(v).map(List(_))

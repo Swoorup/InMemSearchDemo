@@ -5,9 +5,12 @@ import cats.implicits.*
 import cats.effect.{Async, Ref, Sync}
 import java.time.OffsetDateTime
 
+/** 
+ * Possible search errors described in an ADT
+ */
 enum SearchError(val msg: String):
-  case DataSchemaNotPresent(schema: String) extends SearchError(s"No data present for schema $schema")
-  case FieldNotFound(schema: String, field: String) extends SearchError(s"Schema $schema does not contain field $field")
+  case DataSchemaNotPresent(schema: String) extends SearchError(s"No data present for schema '$schema'")
+  case FieldNotFound(schema: String, field: String) extends SearchError(s"Schema '$schema' does not contain field '$field'")
   case InputParseError(parseError: String) extends SearchError(parseError)
 
 trait Database[F[_]]:
@@ -64,12 +67,12 @@ private class DatabaseImpl[F[_]: Async](
         primaryKeys <-
           if field == schema.primary.name then
             // search using primary indexes
-            schema.primary.inputDecoder.decode(value).map(Set(_)).leftMap(SearchError.InputParseError(_))
+            schema.primary.decodeInput(value).map(Set(_)).leftMap(SearchError.InputParseError(_))
           else
             // search using non primary indexes
             for {
               indexData     <- Either.fromOption(documents.indexData.get(field), SearchError.FieldNotFound(schema.name, field))
-              indexToSearch <- indexData.tryParseToIndexPrimitive(value).leftMap(SearchError.InputParseError(_))
+              indexToSearch <- indexData.field.getIndexPrimitive(value).leftMap(SearchError.InputParseError(_))
             } yield indexData.indexToPrimary.get(indexToSearch).getOrElse(Set.empty).asInstanceOf[Set[K]]
       } yield {
         primaryKeys.toList
