@@ -1,3 +1,4 @@
+
 # In-Memory Document Database Demo
 
 A demonstration of in-memory document database, powered by [cats-effect](https://typelevel.org/cats-effect/) and [scala 3](https://docs.scala-lang.org/scala3/).
@@ -47,6 +48,55 @@ To add in-memory supported for any type you would need to provide `DocumentSchem
 ```
 
 To query a field. You will have to implicitly pass the `DocumentSchema` along with specifying the type parameters when querying with the `Database` trait, so it is able to match the correct documents. Not doing so will result in compiler error.
+
+## Workflow
+
+### Insertion
+
+              ┌───────────────────────────────────────┐
+              │                                       │
+              │               Insertion               │
+              │                                       │
+              │ ┌───────────────────────────────────┐ │
+              │ │ Encode fields to Index Primitives │ │
+              │ └─────────────────┬─────────────────┘ │
+              │                   │                   │
+              │                   │                   │
+              │ ┌─────────────────▼─────────────────┐ │
+              │ │   Create IndexData and Document   │ │
+              │ └─────────────────┬─────────────────┘ │
+              │                   │                   │
+              │                   │                   │
+              │ ┌─────────────────▼─────────────────┐ │
+              │ │   Merge Documents in the database │ │
+              │ └───────────────────────────────────┘ │
+              │                                       │
+              └───────────────────────────────────────┘
+
+### Searching
+
+
+               ┌────────────────────────────────────┐
+               │                                    │
+               │              Search                │
+               │                                    │
+               │ ┌────────────────────────────────┐ │
+               │ │Decode input to Index Primitive │ │
+               │ └───────────────┬────────────────┘ │
+               │                 │                  │
+               │                 │                  │
+               │ ┌───────────────▼────────────────┐ │
+               │ │ Retrieve Documents for schema  │ │
+               │ └───────────────┬────────────────┘ │
+               │                 │                  │
+               │                 │                  │
+               │ ┌───────────────▼────────────────┐ │
+               │ │  Full match with Index Data    │ │
+               │ └────────────────────────────────┘ │
+               │                                    │
+               └────────────────────────────────────┘
+ 
+
 
 ## Notes/Assumptions
 
