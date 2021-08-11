@@ -3,6 +3,7 @@ package inmemdb
 object common {
   extension [K, V](m1: Map[K, V]) {
 
+    /** Given two maps, merge them and resolve duplicates by the specified function */
     infix def merge(m2: Map[K, V])(duplicateResolve: (v1: V, v2: V) => V): Map[K, V] = {
       m1 ++ m2.map { case (k, v2) =>
         val resolvedValue = m1.get(k) match

@@ -2,7 +2,6 @@ package inmemdb.db
 
 import inmemdb.common.*
 import inmemdb.db.DocumentSchema
-import cats.implicits.*
 
 /** Container for a single index field data for the document
   */

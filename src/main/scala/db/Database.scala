@@ -1,10 +1,9 @@
 package inmemdb.db
 
 import cats.Applicative
-import cats.implicits.*
 import cats.effect.{Async, Ref, Sync}
+import cats.implicits.*
 import java.time.OffsetDateTime
-import scala.{util => ju}
 
 /** Possible search errors described in an ADT
   */
@@ -31,7 +30,6 @@ object Database:
 private class DatabaseImpl[F[_]: Async](
     documentsSchemaMapRef: Ref[F, Map[DocumentSchema[?, ?], Documents[?, ?]]]
 ) extends Database[F] {
-  import Implicits.*
   import DatabaseError.*
 
   private def isValidSchema[T, K](using schema: DocumentSchema[T, K]): Boolean = {
