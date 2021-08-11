@@ -8,6 +8,9 @@ A demonstration of in-memory document database, powered by [cats-effect](https:/
 * Scala 3 compiler.
 * Java Virtual Machine, version 11 or greater.
 * Scala Build Tool `sbt`
+* Either one of the following IDE should be fine to navigate the codebase.
+  * [VSCode with Metals plugin](https://scalameta.org/metals/docs/editors/vscode/)
+  * [IntelliJ with Scala plugin](https://www.jetbrains.com/help/idea/discover-intellij-idea-for-scala.html)
 
 ## Running
 
