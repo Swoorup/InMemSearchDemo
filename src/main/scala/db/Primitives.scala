@@ -20,6 +20,7 @@ enum IndexPrimitiveValue:
   case Str(content: String)
   case Bool(content: Boolean)
   case Num(content: Long)
+  case Empty
 
 /** The composite index allows supports index support to compound types like Option of Arrays, Arrays, etc
   */
@@ -32,6 +33,6 @@ type IndexValue = IndexPrimitiveValue | IndexCompositeValue
 object IndexValue:
   def decomposeToPrimitive(value: IndexValue): List[IndexPrimitiveValue] = value match {
     case t: IndexPrimitiveValue           => List(t)
-    case IndexCompositeValue.Opt(content) => content.toList.map(decomposeToPrimitive).flatten
+    case IndexCompositeValue.Opt(content) => content.map(decomposeToPrimitive) getOrElse List(IndexPrimitiveValue.Empty)
     case IndexCompositeValue.Arr(content) => content.map(decomposeToPrimitive).flatten
   }

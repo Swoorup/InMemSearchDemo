@@ -13,7 +13,10 @@ object Implicits:
   given IndexEncoder[UUID]           = v => IndexPrimitiveValue.Str(v.toString)
 
   given [T](using inner: IndexEncoder[T]): IndexEncoder[Option[T]] with
-    def apply(vOpt: Option[T]) = IndexCompositeValue.Opt(vOpt.map(inner(_)))
+    def apply(vOpt: Option[T]) = { vOpt match
+      case None => IndexPrimitiveValue.Empty
+      case Some(v) => inner(v) 
+    }
 
   given [T](using inner: IndexEncoder[T]): IndexEncoder[List[T]] with
     def apply(vList: List[T]) = IndexCompositeValue.Arr(vList.map(inner(_)))
@@ -26,7 +29,11 @@ object Implicits:
   given InputDecoder[UUID]           = v => Try(UUID.fromString(v)).toOption.toRight("Failed to parse UUID.")
 
   given [T](using inner: InputDecoder[T]): InputDecoder[Option[T]] with
-    def apply(v: String) = inner(v).map(Some(_))
+    def apply(v: String) = {
+      v match 
+        case "" => Right(None)
+        case _ => inner(v).map(Some(_))
+      }
 
   given [T](using inner: InputDecoder[T]): InputDecoder[List[T]] with
     def apply(v: String) = inner(v).map(List(_))
