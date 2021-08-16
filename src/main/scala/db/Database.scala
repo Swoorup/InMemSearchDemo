@@ -64,7 +64,7 @@ private class DatabaseImpl[F[_]: Async](
     }
   }
 
-  def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, value: String): F[Either[DatabaseError, List[T]]] = {
+  def searchByField[T, K](using schema: DocumentSchema[T, K])(field: String, searchString: String): F[Either[DatabaseError, List[T]]] = {
     for {
       documentsSchemaMap <- documentsSchemaMapRef.get
       documentsOpt       <- Sync[F].delay(documentsSchemaMap.get(schema))
@@ -75,13 +75,18 @@ private class DatabaseImpl[F[_]: Async](
           val primaryKeys =
             if field == schema.primary.name then
               // search using primary indexes
-              schema.primary.decodeInput(value).map(Set(_)).leftMap(InputParseError(_))
+              schema.primary.decodeInput(searchString).map(Set(_)).leftMap(InputParseError(_))
             else
               // search using non primary indexes
               for {
                 indexData     <- Either.fromOption(documents.indexData.get(field), FieldNotFound(schema.name, field))
-                indexToSearch <- indexData.field.getIndexPrimitive(value).leftMap(InputParseError(_))
-              } yield indexData.indexToPrimary.get(indexToSearch).getOrElse(Set.empty)
+                indexToSearch <- indexData.field.getIndexPrimitive(searchString).leftMap(InputParseError(_))
+              } yield {
+                indexToSearch match 
+                  case IndexPrimitiveValue.Str(searchString) => 
+                    indexData.asInstanceOf[IndexData[T, K, String]].partialMatch(searchString)
+                  case _ => indexData.indexToPrimary.get(indexToSearch).getOrElse(Set.empty)
+              }
 
           primaryKeys.map {
             _.toList

@@ -123,4 +123,15 @@ class DatabaseIntegrationTestSuite extends CatsEffectSuite {
       .assertEquals(Right(expectedTickets))
   }
 
+  test("DBIntegrationTest: Should be able to search tickets using partial search string field.") {
+    val expectedTickets = List("a0d5a779-dc8d-4191-9245-971ed57a8072")
+      .map(UUID.fromString)
+      .map(TicketId.fromUUID)
+
+    dbFixture()
+      .searchByField[Ticket, TicketId]("subject", "Italy")
+      .map(_.map(_.map(_.id)))
+      .assertEquals(Right(expectedTickets))
+  }
+
 }
