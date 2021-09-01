@@ -4,17 +4,19 @@ import io.circe.Decoder
 import java.time.OffsetDateTime
 import java.util.UUID
 
-opaque type UserId   = Long
-opaque type TicketId = UUID
+type UserId = UserId.UserId
+object UserId:
+  opaque type UserId   = Long
+  given (using decoder: Decoder[Long]): Decoder[UserId]   = decoder
+  def fromLong(l: Long): UserId = l
+  extension (x: UserId) def value: Long = x
 
-given (using decoder: Decoder[Long]): Decoder[UserId]   = decoder
-given (using decoder: Decoder[UUID]): Decoder[TicketId] = decoder
-
-object UserId { def fromLong(l: Long): UserId = l }
-extension (x: UserId) def value: Long = x
-
-object TicketId { def fromUUID(l: UUID): TicketId = l }
-extension (x: TicketId) def value: UUID = x
+type TicketId = TicketId.TicketId
+object TicketId:
+  opaque type TicketId = UUID
+  given (using decoder: Decoder[UUID]): Decoder[TicketId] = decoder
+  def fromUUID(l: UUID): TicketId = l
+  extension (x: TicketId) def value: UUID = x
 
 case class User(
     id: UserId,
