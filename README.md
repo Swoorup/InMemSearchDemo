@@ -116,4 +116,4 @@ For example, it should be possible to add Geospatial indexing, Trie-based indexi
 
 ## Demo 
 
-[![asciicast](https://asciinema.org/a/m27QSxw5GC1EYCRep4c59Fn56.svg)](https://asciinema.org/a/m27QSxw5GC1EYCRep4c59Fn56)
+[![asciicast](https://asciinema.org/a/liG0o64U18QWWof4VgqfKNULa.svg)](https://asciinema.org/a/liG0o64U18QWWof4VgqfKNULa)
